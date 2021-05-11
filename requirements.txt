@@ -1,3 +1,6 @@
 sgp4==2.19
 flask==1.1.2
-skyfield
+skyfield==1.39
+
+pandas==1.1.5
+xlrd==2.0.1

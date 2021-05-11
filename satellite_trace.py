@@ -1,5 +1,6 @@
 from sgp4.model import WGS84
 from sgp4.api import Satrec, jday
+import pandas as pd
 
 UNIT_M = 1
 UNIT_KM = 2
@@ -23,6 +24,15 @@ def load_twoline_data(filepath='starlink.txt'):
     return twoline_data
 
 
+def load_satellite_info(name, filepath='starlink_info.xls'):
+    df = pd.read_excel(filepath)
+    column_of_name = df.columns[0]
+    for index, row in df.iterrows():
+        if row[column_of_name] == name:
+            return dict(row)
+    return {}
+
+
 class Satellite(object):
     def __init__(self, name, line1, line2, whichconst=WGS84):
         self.name = name.strip()
@@ -39,7 +49,7 @@ class Satellite(object):
         }
 
     def __repr__(self) -> str:
-        return '\n'.join([self.name, self.line1, self. line2])
+        return '\n'.join([self.name, self.line1, self.line2])
 
     def generate_trace(self, start_datetime, interval=300, unit=UNIT_M, total_second=None):
         self.trace['start_datetime'] = start_datetime
@@ -49,7 +59,7 @@ class Satellite(object):
             total_second = 86400 + interval
 
         for second in range(0, total_second, interval):
-            args = start_datetime + (second, )
+            args = start_datetime + (second,)
             error, position, v = self.satellite.sgp4(*jday(*args))
             if error == 0:
                 # has no error
@@ -83,4 +93,3 @@ if __name__ == '__main__':
     name = 'STARLINK-24'
     l1 = '1 44238U 19029D   21129.81825469  .00002569  00000-0  14948-3 0  9991'
     l2 = '2 44238  52.9944 164.4950 0000919  99.7483 260.3613 15.15637519106847'
-

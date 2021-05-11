@@ -2,11 +2,17 @@ import json
 from datetime import datetime as dt
 
 from flask import Flask
+from skyfield.api import EarthSatellite, load
 
-from satellite_trace import load_twoline_data, Satellite
+from satellite_trace import load_twoline_data, Satellite, load_satellite_info
 
 app = Flask(__name__)
 
+def encapulate(data):
+    return {
+        'code': '200',
+        'data': data,
+    }
 
 @app.route('/')
 def index():
@@ -18,8 +24,9 @@ def satellites_list():
     '''satellites?name=<>
     '''
     data = load_twoline_data()
-    # print(data)
-    return json.dumps([name for name, line1, line2 in data])
+    res = [name for name, line1, line2 in data]
+    res = encapulate(res)
+    return json.dumps(res)
 
 
 @app.route('/satellites/<string:name>', methods=('GET',))
@@ -27,20 +34,34 @@ def satellite_detail(name):
     '''GET /satellites/<string:name>
     '''
     data = load_twoline_data()
+    res = {
+        'info': {},
+        'traces': [],
+    }
+    ts = load.timescale()
+    now = dt.now()
     for satellite_name, line1, line2 in data:
         if name == satellite_name:
-            now = dt.now()
+            res['info'] = load_satellite_info(name)
+
             start_datetime = (now.year, now.month, now.day, now.hour, now.minute)
             satellite = Satellite(satellite_name, line1, line2).generate_trace(start_datetime)
-            satellite.transform_to_frontend()
-            response = satellite.transform_to_frontend()
-            # response = {
-            #     'name': satellite.name,
-            #     'trace_data': satellite.transform_to_frontend(),
-            # }
-            return json.dumps(response)
+            res['traces'] = satellite.transform_to_frontend()
+            break
+
+            # satellite = EarthSatellite(line1, line2, name=satellite_name)
+            for second in range(0, 86400 + 300, 300):
+                t = ts.utc(now.year, now.month, now.day, now.hour, now.minute, second)
+                l = satellite.at(t).position.m
+                res['traces'].append(second)
+                res['traces'].append(l[0])
+                res['traces'].append(l[1])
+                res['traces'].append(l[2])
+            print(res['traces'])
+            break
     # print(data)
-    return json.dumps([])
+    res = encapulate(res)
+    return json.dumps(res)
 
 
 if __name__ == '__main__':
