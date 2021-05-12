@@ -4,3 +4,5 @@ skyfield==1.39
 
 pandas==1.1.5
 xlrd==2.0.1
+
+Flask-Cors==3.0.10

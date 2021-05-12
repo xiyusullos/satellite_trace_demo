@@ -2,17 +2,22 @@ import json
 from datetime import datetime as dt
 
 from flask import Flask
-from skyfield.api import EarthSatellite, load
+from flask_cors import CORS
+from skyfield.api import load
 
 from satellite_trace import load_twoline_data, Satellite, load_satellite_info
 
 app = Flask(__name__)
+
+CORS(app)
+
 
 def encapulate(data):
     return {
         'code': '200',
         'data': data,
     }
+
 
 @app.route('/')
 def index():
